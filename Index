@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troop Training Planner</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel to translate JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Page Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+    <div id="root"></div>
+
+    <!-- The type="text/babel" script tag tells Babel to translate this code -->
+    <script type="text/babel">
+        // --- All of your React code goes here ---
+
+        // We use 'window.React' and other globals since we are not using 'import'
+        const { useState, useMemo, useEffect } = React;
+
+        // Since we can't import lucide-react directly, we use a CDN and a global object.
+        // It's a bit more complex, so we'll just define placeholder icons for simplicity in this HTML file.
+        // For a full desktop app, you'd use a build tool like Vite.
+        const IconPlaceholder = ({ size = 24, className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle></svg>;
+        const ChefHat = IconPlaceholder;
+        const TreeDeciduous = IconPlaceholder;
+        const Pickaxe = IconPlaceholder;
+        const PiggyBank = IconPlaceholder;
+        const Timer = IconPlaceholder;
+        const Box = IconPlaceholder;
+        const Gem = IconPlaceholder;
+        const Save = IconPlaceholder;
+        const Trash2 = IconPlaceholder;
+        const PlusCircle = IconPlaceholder;
+        const Loader2 = ({ className }) => <div className={className}>Loading...</div>;
+        const BookUser = IconPlaceholder;
+        const ShoppingCart = IconPlaceholder;
+        const XCircle = IconPlaceholder;
+        const Swords = IconPlaceholder;
+
+        // Firebase needs to be imported from the CDN in a special way for HTML files.
+        // This setup is more complex than the original, but required for desktop use.
+        // For this example, we will simulate the Firebase functionality without connecting,
+        // as the setup is significantly more involved for a single HTML file.
+        // The core calculator logic will still work perfectly.
+
+        const TROOP_DATA = [
+            { type: 'Infantry', tier: 'T1', food: 60, wood: 0, iron: 0, gold: 0, time: 18, might: 4 },
+            { type: 'Infantry', tier: 'T2', food: 68, wood: 21, iron: 0, gold: 0, time: 23, might: 6 },
+            { type: 'Infantry', tier: 'T3', food: 119, wood: 24, iron: 0, gold: 0, time: 30, might: 8 },
+            { type: 'Infantry', tier: 'T4', food: 134, wood: 42, iron: 2, gold: 0, time: 39, might: 12 },
+            { type: 'Infantry', tier: 'T5', food: 219, wood: 50, iron: 5, gold: 0, time: 51, might: 15 },
+            { type: 'Infantry', tier: 'T6', food: 246, wood: 83, iron: 7, gold: 0, time: 67, might: 20 },
+            { type: 'Infantry', tier: 'T7', food: 380, wood: 96, iron: 13, gold: 1, time: 88, might: 25 },
+            { type: 'Infantry', tier: 'T8', food: 410, wood: 159, iron: 18, gold: 2, time: 115, might: 33 },
+            { type: 'Infantry', tier: 'T9', food: 623, wood: 182, iron: 33, gold: 5, time: 150, might: 45 },
+            { type: 'Infantry', tier: 'T10', food: 649, wood: 299, iron: 43, gold: 7, time: 197, might: 60 },
+            { type: 'Cavalry', tier: 'T1', food: 53, wood: 0, iron: 0, gold: 0, time: 18, might: 4 },
+            { type: 'Cavalry', tier: 'T2', food: 75, wood: 17, iron: 0, gold: 0, time: 23, might: 6 },
+            { type: 'Cavalry', tier: 'T3', food: 104, wood: 24, iron: 0, gold: 0, time: 30, might: 8 },
+            { type: 'Cavalry', tier: 'T4', food: 141, wood: 35, iron: 2, gold: 0, time: 39, might: 12 },
+            { type: 'Cavalry', tier: 'T5', food: 201, wood: 50, iron: 4, gold: 0, time: 51, might: 15 },
+            { type: 'Cavalry', tier: 'T6', food: 259, wood: 69, iron: 7, gold: 0, time: 67, might: 20 },
+            { type: 'Cavalry', tier: 'T7', food: 348, wood: 96, iron: 12, gold: 1, time: 88, might: 25 },
+            { type: 'Cavalry', tier: 'T8', food: 431, wood: 132, iron: 19, gold: 2, time: 115, might: 33 },
+            { type: 'Cavalry', tier: 'T9', food: 571, wood: 182, iron: 30, gold: 4, time: 150, might: 45 },
+            { type: 'Cavalry', tier: 'T10', food: 714, wood: 249, iron: 47, gold: 8, time: 197, might: 60 },
+            { type: 'Ranged', tier: 'T1', food: 50, wood: 0, iron: 0, gold: 0, time: 18, might: 4 },
+            { type: 'Ranged', tier: 'T2', food: 68, wood: 21, iron: 0, gold: 0, time: 23, might: 6 },
+            { type: 'Ranged', tier: 'T3', food: 99, wood: 29, iron: 0, gold: 0, time: 30, might: 8 },
+            { type: 'Ranged', tier: 'T4', food: 134, wood: 46, iron: 2, gold: 0, time: 39, might: 12 },
+            { type: 'Ranged', tier: 'T5', food: 182, wood: 60, iron: 4, gold: 0, time: 51, might: 15 },
+            { type: 'Ranged', tier: 'T6', food: 246, wood: 83, iron: 7, gold: 0, time: 67, might: 20 },
+            { type: 'Ranged', tier: 'T7', food: 316, wood: 125, iron: 11, gold: 1, time: 88, might: 25 },
+            { type: 'Ranged', tier: 'T8', food: 410, wood: 172, iron: 18, gold: 2, time: 115, might: 33 },
+            { type: 'Ranged', tier: 'T9', food: 519, wood: 219, iron: 28, gold: 4, time: 150, might: 45 },
+            { type: 'Ranged', tier: 'T10', food: 649, wood: 324, iron: 43, gold: 7, time: 197, might: 60 },
+            { type: 'Siege', tier: 'T1', food: 30, wood: 0, iron: 0, gold: 0, time: 18, might: 4 },
+            { type: 'Siege', tier: 'T2', food: 55, wood: 34, iron: 0, gold: 0, time: 23, might: 6 },
+            { type: 'Siege', tier: 'T3', food: 60, wood: 48, iron: 0, gold: 0, time: 30, might: 8 },
+            { type: 'Siege', tier: 'T4', food: 108, wood: 70, iron: 2, gold: 0, time: 39, might: 12 },
+            { type: 'Siege', tier: 'T5', food: 110, wood: 100, iron: 3, gold: 0, time: 51, might: 15 },
+            { type: 'Siege', tier: 'T6', food: 197, wood: 138, iron: 5, gold: 0, time: 67, might: 20 },
+            { type: 'Siege', tier: 'T7', food: 253, wood: 192, iron: 9, gold: 1, time: 88, might: 25 },
+            { type: 'Siege', tier: 'T8', food: 246, wood: 264, iron: 11, gold: 1, time: 115, might: 33 },
+            { type: 'Siege', tier: 'T9', food: 364, wood: 364, iron: 22, gold: 3, time: 150, might: 45 },
+            { type: 'Siege', tier: 'T10', food: 390, wood: 498, iron: 26, gold: 5, time: 197, might: 60 },
+        ];
+
+        const RESOURCE_DIAMOND_RATES = { food: 3500, wood: 3500, iron: 750, gold: 180 };
+        const SECONDS_PER_DIAMOND_UNIT = 30;
+        const RESOURCES = [
+            { key: 'food', name: 'Food', icon: ChefHat },
+            { key: 'wood', name: 'Wood', icon: TreeDeciduous },
+            { key: 'iron', name: 'Iron', icon: Pickaxe },
+            { key: 'gold', name: 'Gold', icon: PiggyBank },
+        ];
+
+        const formatNumber = (num) => {
+            if (num === null || num === undefined || isNaN(num)) return '0';
+            if (num < 1000) return Math.round(num).toLocaleString('en-US');
+            const tiers = [{ value: 1e9, symbol: 'bil' }, { value: 1e6, symbol: 'mil' }, { value: 1e3, symbol: 'k' }];
+            const tier = tiers.find(t => num >= t.value);
+            if (tier) { const formatted = (num / tier.value).toFixed(2); return `${parseFloat(formatted)}${tier.symbol}`; }
+            return Math.round(num).toLocaleString('en-US');
+        };
+
+        const formatTime = (totalSeconds) => {
+            if (totalSeconds < 0 || isNaN(totalSeconds)) return '0s';
+            totalSeconds = Math.round(totalSeconds);
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            let parts = [];
+            if (days > 0) parts.push(`${days}d`);
+            if (hours > 0) parts.push(`${hours}h`);
+            if (minutes > 0) parts.push(`${minutes}min`);
+            if (seconds > 0 || totalSeconds === 0) parts.push(`${seconds}s`);
+            return parts.join(' ');
+        };
+
+        const NumericalInput = ({ label, value, onChange, step = "1", unit = "", isLarge = false }) => (
+            <label className="block">
+                <span className="text-sm font-medium text-gray-400 block mb-1">{label}</span>
+                <div className="relative">
+                    <input type="number" min="0" step={step} className={`w-full p-3 ${isLarge ? 'text-lg' : 'text-base'} pr-10 bg-gray-700 text-white rounded-lg focus:ring-1 focus:ring-orange-400 focus:border-orange-400 border border-gray-600 transition duration-150`}
+                        value={value} onChange={(e) => onChange(e.target.value)} placeholder="0" />
+                    {unit && (<span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-orange-400 font-bold">{unit}</span>)}
+                </div>
+            </label>
+        );
+
+        function App() {
+            const [troopType, setTroopType] = useState('Infantry');
+            const [troopTier, setTroopTier] = useState('T1');
+            const [quantity, setQuantity] = useState("1000");
+            const [resourceReduction, setResourceReduction] = useState("0");
+            const [speedIncrease, setSpeedIncrease] = useState("0");
+            const [existingFood, setExistingFood] = useState("0");
+            const [existingWood, setExistingWood] = useState("0");
+            const [existingIron, setExistingIron] = useState("0");
+            const [existingGold, setExistingGold] = useState("0");
+            const [planName, setPlanName] = useState('New Training Plan');
+            const [cartItems, setCartItems] = useState([]);
+            
+            // Simulating save/load with localStorage for desktop use
+            const [savedPlans, setSavedPlans] = useState(() => JSON.parse(localStorage.getItem('troop_plans') || '[]'));
+            const [currentPlanId, setCurrentPlanId] = useState(null);
+
+            useEffect(() => {
+                localStorage.setItem('troop_plans', JSON.stringify(savedPlans));
+            }, [savedPlans]);
+            
+            const handleSavePlan = () => {
+                const planData = {
+                    id: currentPlanId || crypto.randomUUID(),
+                    name: planName, troopType, troopTier, quantity, resourceReduction, speedIncrease,
+                    existingFood, existingWood, existingIron, existingGold, cartItems,
+                };
+                
+                const otherPlans = savedPlans.filter(p => p.id !== planData.id);
+                setSavedPlans([...otherPlans, planData]);
+                setCurrentPlanId(planData.id);
+            };
+
+            const handleNewPlan = () => {
+                setPlanName('New Training Plan');
+                setCurrentPlanId(null);
+                setTroopType('Infantry'); setTroopTier('T1'); setQuantity("1000");
+                setResourceReduction("0"); setSpeedIncrease("0");
+                setExistingFood("0"); setExistingWood("0"); setExistingIron("0"); setExistingGold("0");
+                setCartItems([]);
+            };
+
+            const handleDeletePlan = (id) => {
+                setSavedPlans(savedPlans.filter(p => p.id !== id));
+                if (currentPlanId === id) handleNewPlan();
+            };
+
+            const loadPlanState = (plan) => {
+                setPlanName(plan.name);
+                setCurrentPlanId(plan.id);
+                setTroopType(plan.troopType || 'Infantry');
+                setTroopTier(plan.troopTier || 'T1');
+                setQuantity(plan.quantity || "1000");
+                setResourceReduction(plan.resourceReduction || "0");
+                setSpeedIncrease(plan.speedIncrease || "0");
+                setExistingFood(plan.existingFood || "0");
+                setExistingWood(plan.existingWood || "0");
+                setExistingIron(plan.existingIron || "0");
+                setExistingGold(plan.existingGold || "0");
+                setCartItems(plan.cartItems || []);
+            };
+
+            const singleItemCosts = useMemo(() => {
+                const selectedTroop = TROOP_DATA.find(t => t.type === troopType && t.tier === troopTier);
+                const q = parseInt(quantity) || 0;
+                if (!selectedTroop || q <= 0) return null;
+
+                const costs = { net: {}, gross: {}, diamonds: {}, might: 0 };
+                const reductionFactor = 1 - (Math.min(100, Math.max(0, parseFloat(resourceReduction) || 0)) / 100);
+                const speedMultiplier = 1 + (Math.max(0, parseFloat(speedIncrease) || 0) / 100);
+                const existing = {
+                    food: (parseFloat(existingFood) || 0) * 1000,
+                    wood: (parseFloat(existingWood) || 0) * 1000,
+                    iron: (parseFloat(existingIron) || 0) * 1000,
+                    gold: (parseFloat(existingGold) || 0) * 1000,
+                };
+
+                RESOURCES.forEach(res => {
+                    const key = res.key;
+                    costs.gross[key] = (selectedTroop[key] * reductionFactor) * q;
+                    costs.net[key] = Math.max(0, costs.gross[key] - existing[key]);
+                });
+
+                const totalBaseTime = selectedTroop.time * q;
+                costs.gross.time = totalBaseTime / speedMultiplier;
+                let totalResourceDiamonds = 0;
+                RESOURCES.forEach(res => {
+                    const key = res.key;
+                    costs.diamonds[key] = Math.ceil(costs.net[key] / RESOURCE_DIAMOND_RATES[key]);
+                    totalResourceDiamonds += costs.diamonds[key];
+                });
+                costs.diamonds.time = Math.ceil(costs.gross.time / SECONDS_PER_DIAMOND_UNIT);
+                costs.diamonds.total = totalResourceDiamonds + costs.diamonds.time;
+                costs.might = selectedTroop.might * q;
+                return costs;
+            }, [troopType, troopTier, quantity, resourceReduction, speedIncrease, existingFood, existingWood, existingIron, existingGold]);
+            
+            const handleAddToCart = () => {
+                if (!singleItemCosts || (parseInt(quantity) || 0) <= 0) return;
+                const newItem = {
+                    id: crypto.randomUUID(), troopType, troopTier, quantity: parseInt(quantity) || 0, costs: singleItemCosts
+                };
+                setCartItems(prev => [...prev, newItem]);
+            };
+
+            const handleRemoveFromCart = (id) => setCartItems(prev => prev.filter(item => item.id !== id));
+            const handleClearCart = () => setCartItems([]);
+
+            const cartTotals = useMemo(() => {
+                const totals = {
+                    net: { food: 0, wood: 0, iron: 0, gold: 0 },
+                    gross: { time: 0 },
+                    diamonds: { food: 0, wood: 0, iron: 0, gold: 0, time: 0, total: 0 },
+                    might: 0
+                };
+                cartItems.forEach(item => {
+                    totals.might += item.costs.might || 0;
+                    RESOURCES.forEach(res => {
+                        const key = res.key;
+                        totals.net[key] += item.costs.net[key] || 0;
+                        totals.diamonds[key] += item.costs.diamonds[key] || 0;
+                    });
+                    totals.gross.time += item.costs.gross.time || 0;
+                    totals.diamonds.time += item.costs.diamonds.time || 0;
+                    totals.diamonds.total += item.costs.diamonds.total || 0;
+                });
+                return totals;
+            }, [cartItems]);
+
+            const troopTypes = useMemo(() => [...new Set(TROOP_DATA.map(t => t.type))], []);
+            const availableTiers = useMemo(() => [...new Set(TROOP_DATA.filter(t => t.type === troopType).map(t => t.tier))], [troopType]);
+
+            useEffect(() => {
+                if (availableTiers.length > 0 && !availableTiers.includes(troopTier)) {
+                    setTroopTier(availableTiers[0]);
+                }
+            }, [troopType, troopTier, availableTiers]);
+
+            return (
+                <div className="min-h-screen text-white p-4 sm:p-8">
+                  <style>{`
+                    input[type="number"]::-webkit-inner-spin-button,
+                    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+                    input[type="number"] { -moz-appearance: textfield; }
+                  `}</style>
+                  <div className="max-w-7xl mx-auto">
+                    <header className="text-center mb-8">
+                        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-teal-500">
+                        Troop Training Planner
+                        </h1>
+                        <p className="text-sm text-gray-500 mt-2">Desktop Version</p>
+                    </header>
+
+                    <main className="grid lg:grid-cols-5 gap-8">
+                        <div className="lg:col-span-2 bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700 h-fit">
+                            <h2 className="text-xl font-bold mb-4 text-white flex items-center"><BookUser /> Plan Management</h2>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-400 mb-1">Plan Name</label>
+                                <input type="text" className="w-full p-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-teal-500 border border-gray-600"
+                                    value={planName} onChange={(e) => setPlanName(e.target.value)} placeholder="e.g., Kingdom Conquest Plan" />
+                            </div>
+                            <div className="flex space-x-3 mb-6">
+                                <button onClick={handleSavePlan} className="flex-1 flex items-center justify-center p-3 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition duration-150"><Save className="w-5 h-5 mr-2" />{currentPlanId ? 'Update' : 'Save New'}</button>
+                                <button onClick={handleNewPlan} className="p-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition" title="Start a new plan"><PlusCircle /></button>
+                            </div>
+                            <hr className="border-gray-700 mb-4" />
+                            <h3 className="text-lg font-semibold mb-3 text-gray-300">Saved Plans</h3>
+                            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                                {savedPlans.length > 0 ? savedPlans.map(plan => (
+                                    <div key={plan.id} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg group">
+                                        <span className="truncate font-medium flex-1 mr-2">{plan.name}</span>
+                                        <div className="flex items-center space-x-2">
+                                            <button onClick={() => loadPlanState(plan)} className="text-gray-400 hover:te
